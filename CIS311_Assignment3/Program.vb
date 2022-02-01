@@ -153,6 +153,9 @@ Module Program
                 Console.WriteLine("Could not create a file with that name.")
                 fileToWriteInteraction()
             End Try
+        Else
+            'if file already exists we want to delete it so that we do not have stuff before our report in the file
+            System.IO.File.Delete(strPathToWrite)
         End If
 
     End Sub
@@ -182,15 +185,20 @@ Module Program
                 'see if word contains ' ', '.', or ',' and either replace or trim the characters with empty string
                 strCurrentWord = strCurrentWord.Replace(",", "")
                 strCurrentWord = strCurrentWord.Replace(".", "")
+                strCurrentWord = strCurrentWord.Replace("?", "")
+                strCurrentWord = strCurrentWord.Replace("!", "")
                 strCurrentWord.Trim()
                 'now to make it case insensitive we will do ToUpper
                 strCurrentWord = strCurrentWord.ToUpper
-                'check to see if our dictionary already contains the word. if so we increment the integer of the entry
-                If dicWords.ContainsKey(strCurrentWord) Then
-                    dicWords.Item(strCurrentWord) += 1
-                Else
-                    'else we add the word to the dictionary and set its value to 1
-                    dicWords.Add(strCurrentWord, 1)
+                'check word length again since we replaced some characters
+                If strCurrentWord.Length > 0 Then
+                    'check to see if our dictionary already contains the word. if so we increment the integer of the entry
+                    If dicWords.ContainsKey(strCurrentWord) Then
+                        dicWords.Item(strCurrentWord) += 1
+                    Else
+                        'else we add the word to the dictionary and set its value to 1
+                        dicWords.Add(strCurrentWord, 1)
+                    End If
                 End If
             End If
         Next
@@ -235,11 +243,16 @@ Module Program
         'we then divide this by the maximum frequency which will be the second element of the rgMinMaxArray
         'we do integer division since we can not have partial stars
         intNumberOfStars = intNumberOfStars \ rgMinMaxAvg(1)
+        'make sure that at least 1 start shows up
+        If intNumberOfStars = 0 Then
+            intNumberOfStars = 1
+        End If
         Using fileWriter As StreamWriter = New StreamWriter(strPathToWrite, True)
+
             'write each line to the file with the word, frequency, and then number of stars indicating frequency
             For Each entry As KeyValuePair(Of String, Integer) In dicSortedWords
                 Dim intSpacesToAdd As Integer = intLongestWordLength - (entry.Key.Length - 1)
-                Dim strLine As String = entry.Key & Space(intSpacesToAdd) & ": " & String.Format("{0,4:n} ", entry.Value)
+                Dim strLine As String = entry.Key & Space(intSpacesToAdd) & ": " & String.Format("{0,4:d4} ", entry.Value)
                 strLine = strLine & StrDup((intNumberOfStars * entry.Value), "*")
                 fileWriter.WriteLine(strLine)
                 'add words that show up with the min or max frequency to the corresponding String
@@ -269,6 +282,10 @@ Module Program
             fileWriter.WriteLine("Average Word Utilization: " & rgMinMaxAvg(2))
             fileWriter.WriteLine("Highest Word Utilization: " & rgMinMaxAvg(1) & " on " & strHighFrequency)
             fileWriter.WriteLine("Lowest Word Utilization: " & rgMinMaxAvg(0) & " on " & strLowFrequency)
+            'write a message in the report if the max is > CLI_CHAR_LIMIT - (Longest word length + 8)
+            If (CLI_CHARACTER_MAX - (intLongestWordLength + 8)) < rgMinMaxAvg(1) Then
+                fileWriter.WriteLine("-*-*-*Histogram will be innacurate due to limitations on how long the line can be. Certain words occurred too many times to be accurately represented*-*-*-")
+            End If
 
         End Using
     End Sub
