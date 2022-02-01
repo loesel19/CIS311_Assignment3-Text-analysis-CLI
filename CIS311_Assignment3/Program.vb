@@ -187,6 +187,8 @@ Module Program
                 strCurrentWord = strCurrentWord.Replace(".", "")
                 strCurrentWord = strCurrentWord.Replace("?", "")
                 strCurrentWord = strCurrentWord.Replace("!", "")
+                strCurrentWord = strCurrentWord.Replace("(", "")
+                strCurrentWord = strCurrentWord.Replace(")", "")
                 strCurrentWord.Trim()
                 'now to make it case insensitive we will do ToUpper
                 strCurrentWord = strCurrentWord.ToUpper
